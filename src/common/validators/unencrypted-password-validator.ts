@@ -15,7 +15,7 @@ export class UnencryptedPasswordValidator implements ValidatorConstraintInterfac
   isValidPassword(passwordToValidate: string): boolean {
     if (!passwordToValidate) return false;
     // TODO: implement validation rules
-    if (passwordToValidate.length < 6) return false;
+    if (passwordToValidate.length < 8 && /\W_/.test(passwordToValidate)) return false;
     return true;
   }
 

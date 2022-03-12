@@ -1,12 +1,14 @@
-import { Injectable, NotImplementedException } from '@nestjs/common';
+import { Injectable, NotImplementedException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Prisma, User } from '@prisma/client';
 import { PrismaService } from '../prisma.services';
 import { AuthenticateUserDto } from './dto/authenticate-user.dto';
 import { CreateUserDto } from './dto/create-user.dto';
+import { CreateCredentialDto } from './dto/create-credentials.dto';
 import { DeleteUserDto } from './dto/delete-user.dto';
 import { FindUserDto } from './dto/find-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { hashPassword, matchHashedPassword } from '../common/utils/password';
 
 @Injectable()
 export class UserService {
@@ -18,8 +20,13 @@ export class UserService {
    * @param findUserDto
    * @returns User[]
    */
-  async find(findUserDto: FindUserDto): Promise<User[]> {
-    throw new NotImplementedException();
+  async find(findUserDto: FindUserDto): Promise<User[] | null> {
+    const { offset: skip, limit: take } = findUserDto;
+    const queryObject = { skip, take };
+    // if (findUserDto.credentials) {
+    //   queryObject.include = { findUserDto.credentials }
+    // }
+    return this.prisma.user.findMany(queryObject);
   }
 
   /**
@@ -28,8 +35,11 @@ export class UserService {
    * @param whereUnique
    * @returns User
    */
-  async findUnique(whereUnique: Prisma.UserWhereUniqueInput, includeCredentials = false) {
-    throw new NotImplementedException();
+  async findUnique(whereUnique: Prisma.UserWhereUniqueInput, includeCredentials = false): Promise<User | null> {
+    return this.prisma.user.findUnique({
+      where: whereUnique,
+      include: { credential: includeCredentials },
+    });
   }
 
   /**
@@ -39,7 +49,13 @@ export class UserService {
    * @returns result of create
    */
   async create(createUserDto: CreateUserDto) {
-    throw new NotImplementedException();
+    console.log('create User DTO IS', createUserDto);
+    const { password, ...userData } = createUserDto;
+    const hash = await hashPassword(password);
+    // Guarantee transactional write
+    return this.prisma.user.create({
+      data: { ...userData, credential: { create: { hash } } },
+    });
   }
 
   /**
@@ -48,9 +64,17 @@ export class UserService {
    * @param updateUserDto
    * @returns result of update
    */
-  async update(updateUserDto: UpdateUserDto) {
-    throw new NotImplementedException();
-  }
+  // async update(updateUserDto: UpdateUserDto) {
+  //   const { id, credential, ...updateData } = updateUserDto;
+  //   if (credential) {
+  //     credential: {
+  //       update: {
+  //         where;
+  //       }
+  //     }
+  //   }
+  //   return this.prisma.user.update({ data: updateData });
+  // }
 
   /**
    * Deletes a user
@@ -83,7 +107,11 @@ export class UserService {
    * @returns true or false
    */
   async authenticate(authenticateUserDto: AuthenticateUserDto) {
-    throw new NotImplementedException();
+    const user = await this.findUnique({ email: authenticateUserDto.email }, true);
+    console.log('[user found]', user);
+    if (!user) throw new BadRequestException({ message: 'Authentication failed. Please confirm your credentials' });
+    console.log('[user found]', user);
+    // return matchHashedPassword(authenticateUserDto.password, user.credentials.password);
   }
 
   /**
