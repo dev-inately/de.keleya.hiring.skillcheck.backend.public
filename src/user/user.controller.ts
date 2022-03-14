@@ -13,9 +13,12 @@ import {
   UseGuards,
   NotImplementedException,
   ValidationPipe,
+  SetMetadata,
 } from '@nestjs/common';
+import { User } from '@prisma/client';
 import { Request } from 'express';
-import { IResponse } from 'src/common/interfaces';
+import { EndpointIsPublic, getToken } from 'src/common/decorators';
+import { adminAction } from 'src/common/decorators/adminAction.decorator';
 import { AuthenticateUserDto } from './dto/authenticate-user.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { DeleteUserDto } from './dto/delete-user.dto';
@@ -28,62 +31,50 @@ export class UserController {
   constructor(private readonly usersService: UserService) {}
 
   @Get()
-  async find(
-    @Query(new ValidationPipe({ transform: true })) findUserDto: FindUserDto,
-    @Req() req: Request,
-  ): Promise<IResponse> {
-    const data = await this.usersService.find(findUserDto);
-    return {
-      status: 'success',
-      data,
-      message: 'Users fetch result',
-    };
+  async find(@Query(new ValidationPipe({ transform: true })) findUserDto: FindUserDto) {
+    return this.usersService.find(findUserDto);
   }
 
   @Get(':id')
-  async findUnique(@Param('id', ParseIntPipe) id, @Req() req: Request): Promise<IResponse> {
-    const data = await this.usersService.findUnique({ id });
-    return {
-      status: 'success',
-      data,
-      message: 'User fetch Result',
-    };
+  async findUnique(@Param('id', ParseIntPipe) id){
+    return this.usersService.findUnique({ id });
   }
 
   @Post()
+  @EndpointIsPublic()
   async create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
 
-  // @Patch()
-  // async update(@Body() updateUserDto: UpdateUserDto, @Req() req: Request) {
-  //   throw new NotImplementedException();
-  // }
-
-  // @Delete()
-  // async delete(@Body() deleteUserDto: DeleteUserDto, @Req() req: Request) {
-  //   throw new NotImplementedException();
-  // }
-
-  // @Post('validate')
-  // async userValidateToken(@Req() req: Request) {
-  //   throw new NotImplementedException();
-  // }
-
-  @Post('authenticate')
-  async userAuthenticate(
-    @Body(new ValidationPipe({ transform: true })) authenticateUserDto: AuthenticateUserDto,
-  ): Promise<IResponse> {
-    const response = await this.usersService.authenticate(authenticateUserDto);
-    return {
-      status: 'success',
-      data: { is_authenticated: response },
-      message: 'Users fetch resulta',
-    };
+  @Patch()
+  async update(@Body() updateUserDto: UpdateUserDto) {
+    return this.usersService.update(updateUserDto);
   }
 
-  // @Post('token')
-  // async userGetToken(@Body() authenticateUserDto: AuthenticateUserDto) {
-  //   throw new NotImplementedException();
-  // }
+  @Delete()
+  @adminAction()
+  async delete(@Body() deleteUserDto: DeleteUserDto) {
+    return this.usersService.delete(deleteUserDto);
+  }
+
+  @Post('validate')
+  @HttpCode(200)
+  @EndpointIsPublic()
+  async userValidateToken(@getToken() token: string) {
+    return this.usersService.validateToken(token);
+  }
+
+  @Post('authenticate')
+  @HttpCode(200)
+  @EndpointIsPublic()
+  async userAuthenticate(@Body(new ValidationPipe({ transform: true })) authenticateUserDto: AuthenticateUserDto) {
+    return this.usersService.authenticate(authenticateUserDto, false);
+  }
+
+  @Post('token')
+  @HttpCode(200)
+  @EndpointIsPublic()
+  async userGetToken(@Body() authenticateUserDto: AuthenticateUserDto) {
+    return this.usersService.authenticateAndGetJwtToken(authenticateUserDto);
+  }
 }

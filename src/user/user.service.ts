@@ -1,4 +1,4 @@
-import { Injectable, NotImplementedException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotImplementedException, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Prisma, User } from '@prisma/client';
 import { PrismaService } from '../prisma.services';
@@ -9,6 +9,12 @@ import { DeleteUserDto } from './dto/delete-user.dto';
 import { FindUserDto } from './dto/find-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { hashPassword, matchHashedPassword } from '../common/utils/password';
+import { DELETED_USER_NAME, ERRORS } from '../common/utils/constants';
+import { response } from 'express';
+import { CommonFindAttributesDto } from 'src/common/dto/common-find-attributes.dto';
+import {
+  AuthenticateJWTResponse
+} from 'src/common/interfaces';
 
 @Injectable()
 export class UserService {
@@ -21,11 +27,17 @@ export class UserService {
    * @returns User[]
    */
   async find(findUserDto: FindUserDto): Promise<User[] | null> {
-    const { offset: skip, limit: take } = findUserDto;
-    const queryObject = { skip, take };
-    // if (findUserDto.credentials) {
-    //   queryObject.include = { findUserDto.credentials }
-    // }
+    const { offset: skip, limit: take, credentials, name, email, updatedSince, id } = findUserDto;
+    console.log('Limnit is ', take, typeof take);
+    console.log('Crdentials is ', take, typeof credentials);
+    const where: CommonFindAttributesDto = { deleted_at: null };
+    if (name) where.name = { contains: name };
+    if (email) where.email = { contains: email };
+    if (updatedSince) where.updated_at = { gt: updatedSince };
+    if (id?.length) where.id = { in: id };
+
+    const queryObject = { skip, take, where, include: { credential: credentials || false } };
+    console.log(queryObject)
     return this.prisma.user.findMany(queryObject);
   }
 
@@ -48,8 +60,7 @@ export class UserService {
    * @param createUserDto
    * @returns result of create
    */
-  async create(createUserDto: CreateUserDto) {
-    console.log('create User DTO IS', createUserDto);
+  async create(createUserDto: CreateUserDto): Promise<User> {
     const { password, ...userData } = createUserDto;
     const hash = await hashPassword(password);
     // Guarantee transactional write
@@ -64,21 +75,20 @@ export class UserService {
    * @param updateUserDto
    * @returns result of update
    */
-  // async update(updateUserDto: UpdateUserDto) {
-  //   const { id, credential, ...updateData } = updateUserDto;
-  //   if (credential) {
-  //     credential: {
-  //       update: {
-  //         where;
-  //       }
-  //     }
-  //   }
-  //   return this.prisma.user.update({ data: updateData });
-  // }
+  async update(updateUserDto: UpdateUserDto): Promise<User> {
+    const { id, password, ...updateData } = updateUserDto;
+    const query = { data: updateData, credential: null };
+    if (password) {
+      const hashedPassword = await hashPassword(password);
+      query.credential = { update: { hash: hashedPassword } };
+    }
+    if (!query.credential) delete query.credential;
+    return this.prisma.user.update({ where: { id }, data: query });
+  }
 
   /**
    * Deletes a user
-   * Function does not actually remove the user from database but instead marks them as deleted by:
+   * Function do -). es not actually remove the user from database but instead marks them as deleted by:
    * - removing the corresponding `credentials` row from your db
    * - changing the name to DELETED_USER_NAME constant (default: `(deleted)`)
    * - setting email to NULL
@@ -87,7 +97,24 @@ export class UserService {
    * @returns results of users and credentials table modification
    */
   async delete(deleteUserDto: DeleteUserDto) {
-    throw new NotImplementedException();
+    const user = await this.findUnique({ id: Number(deleteUserDto.id) });
+    if (!user || user.deleted_at) {
+      throw new BadRequestException(ERRORS.USER_NOT_FOUND);
+    }
+    const result = await this.prisma.user.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        name: DELETED_USER_NAME,
+        email: null,
+        deleted_at: new Date(),
+        credential: {
+          delete: true,
+        },
+      },
+    });
+    return { users: result };
   }
 
   /**
@@ -96,8 +123,11 @@ export class UserService {
    * @param authenticateUserDto email and password for authentication
    * @returns a JWT token
    */
-  async authenticateAndGetJwtToken(authenticateUserDto: AuthenticateUserDto) {
-    throw new NotImplementedException();
+  async authenticateAndGetJwtToken(authenticateUserDto: AuthenticateUserDto): Promise<AuthenticateJWTResponse> {
+    const { isAuthenticated, user } = await this.authenticate(authenticateUserDto, true);
+    if (!isAuthenticated) throw new UnauthorizedException({ message: ERRORS.INVALID_CREDENTIALS });
+    const token = this.jwtService.sign({ id: user.id });
+    return { token };
   }
 
   /**
@@ -106,12 +136,19 @@ export class UserService {
    * @param authenticateUserDto email and password for authentication
    * @returns true or false
    */
-  async authenticate(authenticateUserDto: AuthenticateUserDto) {
-    const user = await this.findUnique({ email: authenticateUserDto.email }, true);
-    console.log('[user found]', user);
-    if (!user) throw new BadRequestException({ message: 'Authentication failed. Please confirm your credentials' });
-    console.log('[user found]', user);
-    // return matchHashedPassword(authenticateUserDto.password, user.credentials.password);
+  async authenticate(authenticateUserDto: AuthenticateUserDto, returnUserObject: boolean) {
+    const user = await this.prisma.user.findUnique({
+      where: { email: authenticateUserDto.email },
+      include: { credential: true },
+    });
+    // It is generally not a good idea to be specific about the missing field of a signing operation
+    if (!user) throw new UnauthorizedException({ message: ERRORS.INVALID_CREDENTIALS });
+    const isAuthenticated = await matchHashedPassword(authenticateUserDto.password, user.credential.hash);
+
+    if (returnUserObject) {
+      return { isAuthenticated, user };
+    }
+    return { credentials: isAuthenticated };
   }
 
   /**
@@ -121,6 +158,14 @@ export class UserService {
    * @returns the decoded token if valid
    */
   async validateToken(token: string) {
-    throw new NotImplementedException();
+    const data = { is_valid: false };
+    if (!token) return response;
+    try {
+      await this.jwtService.verifyAsync(token);
+      data.is_valid = true;
+    } catch (error) {
+      data.is_valid = false;
+    }
+    return data;
   }
 }

@@ -14,22 +14,22 @@ model User {
   email           String      @unique
   email_confirmed Boolean     @default(false)
   is_admin        Boolean     @default(false)
-  credential      Credentials @relation(fields: [credentials_id], references: [id])
-  credentials_id   Int         @unique
-  createdAt       DateTime    @default(now()) @map("created_at")
-  updatedAt       DateTime    @updatedAt @map("updated_at")
-  deletedAt         DateTime?
+  credential      Credentials? @relation(fields: [credentials_id], references: [id])
+  credentials_id  Int         @unique
+  created_at      DateTime    @default(now())
+  updated_at      DateTime    @updatedAt
+  deleted_at       DateTime?
 
   @@map("users")
 }
 
 model Credentials {
   // the credentials model
-  id        Int      @id @default(autoincrement())
-  hash      String
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  user      User?
+  id         Int      @id @default(autoincrement())
+  hash       String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  user       User?
 
   @@map("credentials")
 }

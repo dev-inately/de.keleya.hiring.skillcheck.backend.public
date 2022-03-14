@@ -4,12 +4,13 @@ import { UserController } from './user/user.controller';
 import { UserService } from './user/user.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as Joi from 'joi';
-import { APP_FILTER } from '@nestjs/core';
-import { QueryExceptionFilter, HttpExceptionFilter } from './common/exception-filters';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { QueryExceptionFilter } from './common/exception-filters';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './common/strategies/jwt.strategy';
 import { PassportModule } from '@nestjs/passport';
 import { AppController } from './app.controller';
+import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { AppController } from './app.controller';
     ConfigService,
     JwtStrategy,
     { provide: APP_FILTER, useClass: QueryExceptionFilter },
+    // { provide: APP_GUARD, useClass: JwtAuthGuard },
     // { provide: APP_FILTER, useClass: HttpExceptionFilter },
   ],
 })

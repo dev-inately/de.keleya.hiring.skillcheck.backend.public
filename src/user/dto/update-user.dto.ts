@@ -1,5 +1,6 @@
 import { PartialType, OmitType } from '@nestjs/mapped-types';
-import { IsEmail, IsNotEmpty, IsBoolean, IsInt } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsNotEmpty, IsInt } from 'class-validator';
 import { CreateUserDto } from './create-user.dto';
 
 /**
@@ -7,14 +8,9 @@ import { CreateUserDto } from './create-user.dto';
  * be changed in real life situations (well, atleast without a form of verification)
  */
 
-export class UpdateUserDto extends PartialType(OmitType(CreateUserDto, ['email'] as const)) {
-  @IsBoolean()
-  email_verified?: boolean;
-
-  @IsBoolean()
-  is_admin?: boolean;
-
-  @IsNotEmpty()
+export class UpdateUserDto extends PartialType(OmitType(CreateUserDto, ['email', 'is_admin'] as const)) {
   @IsInt()
+  @Type(() => Number)
+  @IsNotEmpty()
   id: number;
 }
