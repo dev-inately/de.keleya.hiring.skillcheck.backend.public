@@ -1,9 +1,10 @@
 import { UnprocessableEntityException, ValidationError, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { useContainer } from 'class-validator';
+import { RedocModule, RedocOptions } from 'nestjs-redoc';
 import { AppModule } from './app.module';
-import { HttpExceptionFilter } from './common/exception-filters';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -14,6 +15,33 @@ async function bootstrap() {
   });
   const configService = app.get(ConfigService);
   console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
+
+  const config = new DocumentBuilder()
+    .setTitle('Keleya Test Documentation')
+    .setDescription('A short demo description of the Keleya Test API')
+    .addBearerAuth()
+    .build();
+
+  const options = {
+    operationIdFactory: (controllerKey: string, methodKey: string) => methodKey,
+  };
+
+  const document = SwaggerModule.createDocument(app, config, options);
+
+  const redocOptions: RedocOptions = {
+    sortPropsAlphabetically: true,
+    hideDownloadButton: false,
+    hideHostname: false,
+    tagGroups: [
+      {
+        name: 'User resources',
+        tags: ['Users'],
+      },
+    ],
+  };
+  SwaggerModule.setup('/docs', app, document);
+  await RedocModule.setup('/api-docs', app, document, redocOptions);
+
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
@@ -27,7 +55,6 @@ async function bootstrap() {
   );
   // enable useContainer to be able to inject into class validators
   useContainer(app.select(AppModule), { fallbackOnErrors: true });
-  app.useGlobalFilters(new HttpExceptionFilter());
   await app.listen(configService.get('PORT'));
 }
 bootstrap();
