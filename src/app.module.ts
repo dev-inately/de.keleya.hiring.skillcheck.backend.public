@@ -45,7 +45,6 @@ import { CurrentUserGuard, JwtAuthGuard, RolesGuard } from './common/guards';
     ConfigService,
     JwtStrategy,
     { provide: APP_FILTER, useClass: QueryExceptionFilter },
-    { provide: APP_FILTER, useClass: HttpException },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
     { provide: APP_GUARD, useClass: CurrentUserGuard },
