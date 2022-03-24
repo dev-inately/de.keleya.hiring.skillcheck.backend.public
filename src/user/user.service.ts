@@ -38,6 +38,7 @@ export class UserService {
    * Finds single User by id, name or email
    *
    * @param whereUnique
+   * @param includeCredentials boolean
    * @returns User
    */
   async findUnique(whereUnique: Prisma.UserWhereUniqueInput, includeCredentials = false): Promise<User | null> {
@@ -131,6 +132,7 @@ export class UserService {
    * Authenticates a user
    *
    * @param authenticateUserDto email and password for authentication
+   * @param returnUserObject For function re-use to return user fetched
    * @returns true or false
    */
   async authenticate(authenticateUserDto: AuthenticateUserDto, returnUserObject: boolean) {

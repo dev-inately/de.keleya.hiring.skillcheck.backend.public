@@ -1,6 +1,6 @@
 import { Catch, HttpStatus, ArgumentsHost, ExceptionFilter } from '@nestjs/common';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
-import { Request, Response } from 'express';
+import { Request } from 'express';
 import { IResponse } from '../interfaces/index';
 import * as crypto from 'crypto';
 @Catch(PrismaClientKnownRequestError)

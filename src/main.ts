@@ -1,10 +1,4 @@
-import {
-  BadRequestException,
-  NotFoundException,
-  UnprocessableEntityException,
-  ValidationError,
-  ValidationPipe,
-} from '@nestjs/common';
+import { UnprocessableEntityException, ValidationError, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { useContainer } from 'class-validator';

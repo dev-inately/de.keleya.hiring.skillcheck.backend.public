@@ -1,6 +1,6 @@
 import { Catch, ArgumentsHost, HttpException, ExceptionFilter, HttpStatus } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { IResponse } from '../interfaces/index';
+import { IResponse } from '../interfaces';
 import * as crypto from 'crypto';
 
 @Catch(HttpException)
