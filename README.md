@@ -71,9 +71,21 @@ Command lines:
 - the following should run without errors:
 ```
 yarn
-npx migrate reset
+npx prisma migrate reset
 yarn test
 ```
 ### Your Notes Below Here
+Here are some modifications that were done on my part 
 
-...
+- I added a `deleted_at` field which shows if a record has been deleted or not. Futhermore, I also implemented it in a way such that deleted records are not fetched when they are being queried except a query `?show_deleted=true` is passed for the admin. 
+- I added test to the `user.service.ts` and `user.controller.ts` (`a code that's not tested is broken by default - Bruce Eckel`). I didn't add e2e test because that's essentially what the Postman test also does. In real life situation however, I would definitely write e2e test which would have a seperate environment setup as that will also provide an insight on how the code really reacts in real life scenarios.
+- I added documentation to the API (I always do!). I'm a die-hard [redoc](https://github.com/Redocly/redoc) fan but I also added Swagger UI too. These can be accessed via `/api-docs` for Redoc and `/docs` for Swagger.
+- I modified the `/authenticate` response a bit, so instead of returning `credentials: true`, which might be a bit confusing, I returned `is_authenticated: true` which is less ambiguous.
+- I made a generic error format. They will always return `status`, `error` and `message`. So, in order not to expose too much error or stacktraces to user, I truncated some error object/array and returned the string as a message. Ideally, full error stacks are meant to be logged externally (which is why I added a `trace_id` to the error object which would be like the key on our logging server).
+- I added the _is_admin_ status to the token 
+- I prevented the fields `email_confirmed` and `is_admin` from being created or updated. This fields are updated based on conditions (for example, email_confirmed will only be changed after a successful verification process)
+
+Here are some observations
+- Prisma naming convention for the `models` is camelCase but the database layout shows `snake_case`. We can use `@map` to rename that but I didn't do it, for clarity. (the in-app comment, mentions it in snake_case but I later found out that the test checks for camelCase but I adjusted that to expect snake_case).
+- Responses can be made uniform such as having an IResponse class which will describe all types of response. I tend to follow [JSend](https://github.com/omniti-labs/jsend) when I can, but applying it here will be too much of a change.
+... 
