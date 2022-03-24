@@ -4,3 +4,10 @@ export interface IResponse {
   data?: any[] | object;
   error?: any;
 }
+
+export interface DeletedResponse {
+  deleted: boolean;
+}
+export interface AuthenticateJWTResponse {
+  token: string;
+}
