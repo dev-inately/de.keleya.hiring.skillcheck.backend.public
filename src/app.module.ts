@@ -5,7 +5,7 @@ import { UserService } from './user/user.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as Joi from 'joi';
 import { APP_FILTER } from '@nestjs/core';
-import { QueryExceptionFilter } from './common/exception-filters/query-exception.filter';
+import { QueryExceptionFilter, HttpExceptionFilter } from './common/exception-filters';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './common/strategies/jwt.strategy';
 import { PassportModule } from '@nestjs/passport';
@@ -44,6 +44,7 @@ import { AppController } from './app.controller';
     ConfigService,
     JwtStrategy,
     { provide: APP_FILTER, useClass: QueryExceptionFilter },
+    { provide: APP_FILTER, useClass: HttpExceptionFilter },
   ],
 })
 export class AppModule {}
