@@ -15,7 +15,7 @@ model User {
   email_confirmed Boolean     @default(false)
   is_admin        Boolean     @default(false)
   credential      Credentials? @relation(fields: [credentials_id], references: [id])
-  credentials_id  Int         @unique
+  credentials_id  Int?         @unique
   created_at      DateTime    @default(now())
   updated_at      DateTime    @updatedAt
   deleted_at       DateTime?

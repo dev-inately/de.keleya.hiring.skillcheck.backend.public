@@ -1,33 +1,60 @@
-import { Optional } from '@nestjs/common';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
-import { IsNotEmpty, IsString, IsArray, IsBoolean, IsEmail, IsInt, IsDate, isDate } from 'class-validator';
+import { IsNotEmpty, IsString, IsBoolean, IsEmail, IsInt, IsDate, IsOptional } from 'class-validator';
 
 export class FindUserDto {
   // @Optional()
   // @IsInt()
+  @ApiPropertyOptional({ type: Number })
   @Type(() => Number)
+  @IsInt()
+  @IsOptional()
   limit?: number;
 
-  // @IsInt()
+  @ApiPropertyOptional({ type: Number })
   @Type(() => Number)
+  @IsInt()
+  @IsNotEmpty()
+  @IsOptional()
   offset?: number;
 
-  @Optional()
+  @ApiPropertyOptional({ type: Date })
   @Type(() => Date)
   @IsDate()
+  @IsNotEmpty()
+  @IsOptional()
   updatedSince?: Date;
 
-  // @IsInt({ each: true })
-  // // @Type(() => Number)
-  // @Transform((value: string[]) => value.split(','))
-  // @IsArray()
+  @ApiPropertyOptional({ type: [Number] })
+  @Transform((obj) =>
+    String(obj.value)
+      .trim()
+      .split(',')
+      .map((x: string) => Number(x)),
+  )
+  @IsOptional()
   id?: number[];
 
-  @Optional()
+  @ApiPropertyOptional()
+  @IsString()
+  @IsNotEmpty()
+  @IsOptional()
   name?: string;
 
+  @ApiPropertyOptional({ type: Boolean })
   @Type(() => Boolean)
+  @IsOptional()
+  @IsBoolean()
   credentials?: boolean;
 
+  @ApiPropertyOptional()
+  @IsEmail()
+  @IsOptional()
   email?: string;
+
+  @ApiPropertyOptional({ type: Boolean })
+  @Type(() => Boolean)
+  @IsBoolean()
+  @IsOptional()
+  show_deleted?: boolean;
 }

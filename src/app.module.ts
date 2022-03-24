@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { HttpException, Module } from '@nestjs/common';
 import { PrismaService } from './prisma.services';
 import { UserController } from './user/user.controller';
 import { UserService } from './user/user.service';
@@ -10,7 +10,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './common/strategies/jwt.strategy';
 import { PassportModule } from '@nestjs/passport';
 import { AppController } from './app.controller';
-import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
+import { CurrentUserGuard, JwtAuthGuard, RolesGuard } from './common/guards';
 
 @Module({
   imports: [
@@ -45,8 +45,10 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
     ConfigService,
     JwtStrategy,
     { provide: APP_FILTER, useClass: QueryExceptionFilter },
-    // { provide: APP_GUARD, useClass: JwtAuthGuard },
-    // { provide: APP_FILTER, useClass: HttpExceptionFilter },
+    { provide: APP_FILTER, useClass: HttpException },
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: RolesGuard },
+    { provide: APP_GUARD, useClass: CurrentUserGuard },
   ],
 })
 export class AppModule {}

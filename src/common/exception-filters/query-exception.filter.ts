@@ -1,6 +1,6 @@
 import { Catch, HttpStatus, ArgumentsHost, ExceptionFilter } from '@nestjs/common';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
-import { Request, Response } from 'express';
+import { Request } from 'express';
 import { IResponse } from '../interfaces/index';
 import * as crypto from 'crypto';
 @Catch(PrismaClientKnownRequestError)
@@ -18,8 +18,11 @@ export class QueryExceptionFilter implements ExceptionFilter {
 
     switch (errorCode) {
       case 'P2002':
-        message = 'Unique Constraint Error';
+        message = 'Unique Constraint Error: User already exists';
         break;
+
+      default:
+        message = Object.values(meta)[0];
     }
 
     const data: IResponse = {

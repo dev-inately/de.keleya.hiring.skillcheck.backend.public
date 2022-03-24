@@ -1,21 +1,17 @@
-import { Injectable, NotImplementedException, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import * as crypto from 'crypto';
+import { Injectable, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Prisma, User } from '@prisma/client';
 import { PrismaService } from '../prisma.services';
 import { AuthenticateUserDto } from './dto/authenticate-user.dto';
 import { CreateUserDto } from './dto/create-user.dto';
-import { CreateCredentialDto } from './dto/create-credentials.dto';
 import { DeleteUserDto } from './dto/delete-user.dto';
 import { FindUserDto } from './dto/find-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { hashPassword, matchHashedPassword } from '../common/utils/password';
 import { DELETED_USER_NAME, ERRORS } from '../common/utils/constants';
-import { response } from 'express';
 import { CommonFindAttributesDto } from 'src/common/dto/common-find-attributes.dto';
-import {
-  AuthenticateJWTResponse
-} from 'src/common/interfaces';
-
+import { AuthenticateJWTResponse } from 'src/common/interfaces';
 @Injectable()
 export class UserService {
   constructor(private readonly prisma: PrismaService, private readonly jwtService: JwtService) {}
@@ -26,18 +22,16 @@ export class UserService {
    * @param findUserDto
    * @returns User[]
    */
-  async find(findUserDto: FindUserDto): Promise<User[] | null> {
-    const { offset: skip, limit: take, credentials, name, email, updatedSince, id } = findUserDto;
-    console.log('Limnit is ', take, typeof take);
-    console.log('Crdentials is ', take, typeof credentials);
-    const where: CommonFindAttributesDto = { deleted_at: null };
+  async find(findUserDto?: FindUserDto): Promise<User[] | null> {
+    const { offset: skip, limit: take, credentials, name, email, updatedSince, id, show_deleted } = findUserDto;
+    const where: CommonFindAttributesDto = show_deleted ? {} : { deleted_at: null };
     if (name) where.name = { contains: name };
-    if (email) where.email = { contains: email };
+    if (email) where.email = email;
     if (updatedSince) where.updated_at = { gt: updatedSince };
     if (id?.length) where.id = { in: id };
 
     const queryObject = { skip, take, where, include: { credential: credentials || false } };
-    console.log(queryObject)
+    // console.log(queryObject);
     return this.prisma.user.findMany(queryObject);
   }
 
@@ -48,10 +42,13 @@ export class UserService {
    * @returns User
    */
   async findUnique(whereUnique: Prisma.UserWhereUniqueInput, includeCredentials = false): Promise<User | null> {
-    return this.prisma.user.findUnique({
+    const user = await this.prisma.user.findUnique({
       where: whereUnique,
       include: { credential: includeCredentials },
     });
+    // If user has been deleted, no need to return user
+    if (user?.deleted_at) return null;
+    return user;
   }
 
   /**
@@ -77,7 +74,7 @@ export class UserService {
    */
   async update(updateUserDto: UpdateUserDto): Promise<User> {
     const { id, password, ...updateData } = updateUserDto;
-    const query = { data: updateData, credential: null };
+    const query = { ...updateData, credential: null };
     if (password) {
       const hashedPassword = await hashPassword(password);
       query.credential = { update: { hash: hashedPassword } };
@@ -107,7 +104,8 @@ export class UserService {
       },
       data: {
         name: DELETED_USER_NAME,
-        email: null,
+        // Email is unique, append a random hash and _NULL_ (to be split-able) to email instead
+        email: crypto.randomBytes(4).toString('hex') + '_NULL_' + user.email,
         deleted_at: new Date(),
         credential: {
           delete: true,
@@ -126,7 +124,7 @@ export class UserService {
   async authenticateAndGetJwtToken(authenticateUserDto: AuthenticateUserDto): Promise<AuthenticateJWTResponse> {
     const { isAuthenticated, user } = await this.authenticate(authenticateUserDto, true);
     if (!isAuthenticated) throw new UnauthorizedException({ message: ERRORS.INVALID_CREDENTIALS });
-    const token = this.jwtService.sign({ id: user.id });
+    const token = this.jwtService.sign({ id: user.id, username: user.name, is_admin: user.is_admin });
     return { token };
   }
 
@@ -143,12 +141,14 @@ export class UserService {
     });
     // It is generally not a good idea to be specific about the missing field of a signing operation
     if (!user) throw new UnauthorizedException({ message: ERRORS.INVALID_CREDENTIALS });
+    // Let deleted users return false when authentication is checked
+    if (!user || user.deleted_at) return { credentials: false };
     const isAuthenticated = await matchHashedPassword(authenticateUserDto.password, user.credential.hash);
 
     if (returnUserObject) {
       return { isAuthenticated, user };
     }
-    return { credentials: isAuthenticated };
+    return { is_authenticated: isAuthenticated };
   }
 
   /**
@@ -159,7 +159,7 @@ export class UserService {
    */
   async validateToken(token: string) {
     const data = { is_valid: false };
-    if (!token) return response;
+    if (!token) return data;
     try {
       await this.jwtService.verifyAsync(token);
       data.is_valid = true;
