@@ -1,19 +1,6 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  ParseIntPipe,
-  Patch,
-  Post,
-  Query,
-  Req,
-  HttpCode,
-  UseGuards,
-  NotImplementedException,
-} from '@nestjs/common';
-import { Request } from 'express';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, HttpCode } from '@nestjs/common';
+
+import { getToken } from './../common/decorators';
 import { AuthenticateUserDto } from './dto/authenticate-user.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { DeleteUserDto } from './dto/delete-user.dto';
@@ -26,42 +13,46 @@ export class UserController {
   constructor(private readonly usersService: UserService) {}
 
   @Get()
-  async find(@Query() findUserDto: FindUserDto, @Req() req: Request) {
-    throw new NotImplementedException();
+  find(@Query() findUserDto: FindUserDto) {
+    return this.usersService.find(findUserDto);
   }
 
   @Get(':id')
-  async findUnique(@Param('id', ParseIntPipe) id, @Req() req: Request) {
-    throw new NotImplementedException();
+  async findUnique(@Param('id', ParseIntPipe) id) {
+    return this.usersService.findUnique({ id });
   }
 
   @Post()
   async create(@Body() createUserDto: CreateUserDto) {
-    throw new NotImplementedException();
+    return this.usersService.create(createUserDto);
   }
 
   @Patch()
-  async update(@Body() updateUserDto: UpdateUserDto, @Req() req: Request) {
-    throw new NotImplementedException();
+  async update(@Body() updateUserDto: UpdateUserDto) {
+    return this.usersService.update(updateUserDto);
   }
 
   @Delete()
-  async delete(@Body() deleteUserDto: DeleteUserDto, @Req() req: Request) {
-    throw new NotImplementedException();
+  @HttpCode(200)
+  async delete(@Body() deleteUserDto: DeleteUserDto) {
+    return this.usersService.delete(deleteUserDto);
   }
 
   @Post('validate')
-  async userValidateToken(@Req() req: Request) {
-    throw new NotImplementedException();
+  @HttpCode(200)
+  async userValidateToken(@getToken() token: string) {
+    return this.usersService.validateToken(token);
   }
 
   @Post('authenticate')
+  @HttpCode(200)
   async userAuthenticate(@Body() authenticateUserDto: AuthenticateUserDto) {
-    throw new NotImplementedException();
+    return this.usersService.authenticate(authenticateUserDto, false);
   }
 
   @Post('token')
+  @HttpCode(200)
   async userGetToken(@Body() authenticateUserDto: AuthenticateUserDto) {
-    throw new NotImplementedException();
+    return this.usersService.authenticateAndGetJwtToken(authenticateUserDto);
   }
 }
