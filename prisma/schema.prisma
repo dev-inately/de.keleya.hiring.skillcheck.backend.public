@@ -14,11 +14,11 @@ model User {
   email           String      @unique
   email_confirmed Boolean     @default(false)
   is_admin        Boolean     @default(false)
-  credential      Credentials? @relation(fields: [credentials_id], references: [id])
-  credentials_id  Int         @unique
+  credential      Credentials? @relation(fields: [credentials_id], references: [id], onDelete: SetNull)
+  credentials_id  Int?
   created_at      DateTime    @default(now())
   updated_at      DateTime    @updatedAt
-  deleted_at       DateTime?
+  deleted_at      DateTime?
 
   @@map("users")
 }
@@ -33,3 +33,4 @@ model Credentials {
 
   @@map("credentials")
 }
+

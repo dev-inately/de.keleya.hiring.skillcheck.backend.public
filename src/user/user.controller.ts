@@ -68,7 +68,7 @@ export class UserController {
   @AdminAction()
   @HttpCode(200)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Delete A User' })
+  @ApiOperation({ summary: 'Delete A User [admin operation]' })
   @ApiForbiddenResponse({ description: 'You are not allowed to perform this action' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiOkResponse({ status: 200, description: 'Record deleted', type: UserEntity })

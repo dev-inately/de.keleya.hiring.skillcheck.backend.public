@@ -5,6 +5,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { useContainer } from 'class-validator';
 import { RedocModule, RedocOptions } from 'nestjs-redoc';
 import { AppModule } from './app.module';
+import { HttpExceptionFilter } from './common/exception-filters';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -37,6 +38,10 @@ async function bootstrap() {
         name: 'User resources',
         tags: ['Users'],
       },
+      {
+        name: 'Misc resources',
+        tags: ['default'],
+      },
     ],
   };
   SwaggerModule.setup('/docs', app, document);
@@ -53,6 +58,7 @@ async function bootstrap() {
       },
     }),
   );
+  app.useGlobalFilters(new HttpExceptionFilter());
   // enable useContainer to be able to inject into class validators
   useContainer(app.select(AppModule), { fallbackOnErrors: true });
   await app.listen(configService.get('PORT'));

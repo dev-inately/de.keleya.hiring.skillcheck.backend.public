@@ -1,4 +1,4 @@
-import { PartialType, OmitType, ApiPropertyOptional } from '@nestjs/swagger';
+import { PartialType, OmitType, ApiProperty } from "@nestjs/swagger";
 import { Type } from 'class-transformer';
 import { IsNotEmpty, IsInt } from 'class-validator';
 import { CreateUserDto } from './create-user.dto';
@@ -10,7 +10,7 @@ import { CreateUserDto } from './create-user.dto';
  */
 
 export class UpdateUserDto extends PartialType(OmitType(CreateUserDto, ['email'] as const)) {
-  @ApiPropertyOptional({ type: Number, default: 1 })
+  @ApiProperty({ type: Number, default: 1 })
   @IsInt()
   @Type(() => Number)
   @IsNotEmpty()
