@@ -1,7 +1,7 @@
 import { Catch, HttpStatus, ArgumentsHost, ExceptionFilter } from '@nestjs/common';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
 import { Request } from 'express';
-import { IResponse } from '../interfaces/index';
+import { IResponse } from '../interfaces';
 import * as crypto from 'crypto';
 @Catch(PrismaClientKnownRequestError)
 export class QueryExceptionFilter implements ExceptionFilter {
@@ -22,7 +22,7 @@ export class QueryExceptionFilter implements ExceptionFilter {
         break;
 
       default:
-        message = Object.values(meta)[0];
+        message = Object.values(meta)[0] || message;
     }
 
     const data: IResponse = {

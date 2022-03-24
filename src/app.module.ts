@@ -1,4 +1,4 @@
-import { HttpException, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { PrismaService } from './prisma.services';
 import { UserController } from './user/user.controller';
 import { UserService } from './user/user.service';

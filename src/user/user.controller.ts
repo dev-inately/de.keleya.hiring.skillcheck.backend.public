@@ -7,9 +7,8 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { getUser } from '../common/decorators/getUser.decorator';
 import { JwtTokenUser } from '../common/types/jwtTokenUser';
-import { EndpointIsPublic, getToken, AdminAction, CurrentUser } from './../common/decorators';
+import { EndpointIsPublic, getToken, AdminAction, CurrentUser, getUser } from '../common/decorators';
 import { AuthenticateUserDto } from './dto/authenticate-user.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { DeleteUserDto } from './dto/delete-user.dto';

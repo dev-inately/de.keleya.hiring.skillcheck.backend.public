@@ -6,7 +6,7 @@ import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 @Controller()
 export class AppController {
   @EndpointIsPublic()
-  @ApiOkResponse({ status: 200, description: 'OK',  })
+  @ApiOkResponse({ status: 200, description: 'OK' })
   @Get('/api/_health')
   health() {
     return 'OK';

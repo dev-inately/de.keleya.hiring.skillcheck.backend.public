@@ -1,4 +1,4 @@
-import { PartialType, OmitType, ApiProperty } from "@nestjs/swagger";
+import { PartialType, OmitType, ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsNotEmpty, IsInt } from 'class-validator';
 import { CreateUserDto } from './create-user.dto';
