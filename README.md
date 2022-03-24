@@ -88,4 +88,10 @@ Here are some modifications that were done on my part
 Here are some observations
 - Prisma naming convention for the `models` is camelCase but the database layout shows `snake_case`. We can use `@map` to rename that but I didn't do it, for clarity. (the in-app comment, mentions it in snake_case but I later found out that the test checks for camelCase but I adjusted that to expect snake_case).
 - Responses can be made uniform such as having an IResponse class which will describe all types of response. I tend to follow [JSend](https://github.com/omniti-labs/jsend) when I can, but applying it here will be too much of a change.
-... 
+
+### HOW TO RUN THIS PROJECT
+- Clone the repository
+- Run `yarn install`.
+- Run `yarn prisma migrate reset`. This will also populate the DB with a superadmin and two users.
+- Run `yarn start:dev` to start the server. You can now run the attached POSTMAN test that was sent (the attached one might not all pass due to the changes in the ID).
+- To run the test, `yarn test`
